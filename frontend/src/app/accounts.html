@@ -1,0 +1,117 @@
+<section class="page">
+  <div class="heading">
+    <h1>Portefeuille de comptes</h1>
+    <a class="primary" routerLink="/accounts/new"><bank-icon name="plus" /> Ouvrir un compte</a>
+  </div>
+  <bank-status />
+  @if (!bank.loading() && !bank.error()) {
+    <div class="summary">
+      <div class="total">
+        <span class="stat-label">Solde cumulé</span>
+        <div class="big-number">{{ amount(total()) }} <small>MAD</small></div>
+        <div class="stat-foot">
+          <span><strong>{{ bank.accounts().length }}</strong> comptes</span>
+          <a routerLink="/customers"><strong>{{ bank.customers().length }}</strong> clients <bank-icon name="right" /></a>
+        </div>
+      </div>
+      <div class="distribution">
+        <span class="stat-label">Répartition des soldes</span>
+        <div class="meter" aria-hidden="true" [class.zero]="!total()"><i [style.width.%]="share()"></i></div>
+        <div class="legend">
+          <div>
+            <span><i></i>Courants</span>
+            <b>{{ amount(current()) }} MAD</b><small>{{ share() }} %</small>
+          </div>
+          <div>
+            <span><i class="saving"></i>Épargne</span>
+            <b>{{ amount(savings()) }} MAD</b><small>{{ total() ? 100 - share() : 0 }} %</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel directory">
+      <div class="panel-head">
+        <h2>Tous les comptes <span class="count" aria-live="polite">{{ filtered().length }}</span></h2>
+        <div class="filters">
+          <div class="search">
+            <bank-icon name="search" />
+            <input
+              #accountSearch
+              type="search"
+              placeholder="Nom ou ID"
+              aria-label="Rechercher un compte"
+              [ngModel]="query()"
+              (ngModelChange)="query.set($event)"
+            />
+          </div>
+          <select aria-label="Filtrer par type" [ngModel]="type()" (ngModelChange)="type.set($event)">
+            <option value="">Tous les types</option>
+            <option value="CURRENT">Courant</option>
+            <option value="SAVINGS">Épargne</option>
+          </select>
+          @if (query() || type()) {
+            <button type="button" class="icon-button filter-reset" aria-label="Effacer les filtres"
+              title="Effacer les filtres" (click)="clearFilters(); accountSearch.focus()">
+              <bank-icon name="close" />
+            </button>
+          }
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="accounts-table">
+          <thead>
+            <tr>
+              <th>Titulaire</th>
+              <th>Type</th>
+              <th>Ouverture</th>
+              <th class="numeric">Solde (MAD)</th>
+              <th aria-label="Détails"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of filtered(); track a.id) {
+            <tr>
+              <td>
+                <a class="person" [routerLink]="['/accounts', a.id]">
+                  <span class="avatar" [attr.data-tone]="a.customerId % 4" aria-hidden="true">{{ initials(owner(a)) }}</span>
+                  <span>{{ owner(a) }}<small class="mono">{{ a.id.slice(0, 8).toUpperCase() }}</small></span>
+                </a>
+              </td>
+              <td>
+                <span class="pill" [class.savings]="a.type === 'SAVINGS'">{{ typeName(a.type) }}</span>
+              </td>
+              <td class="muted">{{ date(a.createdAt) }}</td>
+              <td class="numeric balance">
+                {{ amount(a.balance) }}
+                <small class="mobile-type">{{ typeName(a.type) }}</small>
+              </td>
+              <td>
+                <a
+                  class="row-link"
+                  [routerLink]="['/accounts', a.id]"
+                  [attr.aria-label]="'Voir le compte ' + a.id"
+                  ><bank-icon name="right"
+                /></a>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="5" class="empty">
+                <strong>{{ bank.accounts().length ? 'Aucun résultat' : 'Aucun compte ouvert' }}</strong>
+                @if (bank.accounts().length) {
+                  <span>Essayez un autre nom ou effacez les filtres.</span>
+                  <button type="button" class="secondary" (click)="clearFilters(); accountSearch.focus()">
+                    Effacer les filtres
+                  </button>
+                } @else {
+                  <a class="secondary" routerLink="/accounts/new">Ouvrir un compte</a>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</section>
